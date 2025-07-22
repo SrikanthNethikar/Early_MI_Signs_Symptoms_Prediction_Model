@@ -1,58 +1,21 @@
 # Primary Libraries
-streamlit==1.36.0          # Stable, relatively recent Streamlit version
-shap==0.48.0               # The version you had.
-numpy==1.26.4              # Compatible with recent shap, pandas, scikit-learn 1.2.2
-pandas==2.2.2              # Recent stable pandas
-scikit-learn==1.2.2        # <<< IMPORTANT: This is the change! Match your local version.
-scipy==1.13.1              # Compatible with numpy and scikit-learn
+streamlit==1.36.0
+shap==0.48.0
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.2.2
+scipy==1.13.1
+numba # Allow the installer to pick the compatible llvmlite version for the chosen Python
 
-# Data Visualization and Utilities (Keep these if you are using them)
+# Data Visualization and Utilities (Only keep if you actively use them in app.py)
 altair==5.3.0
 matplotlib==3.8.4
 pydeck==0.9.1
-tqdm==4.66.4
+tqdm==4.66.4 # Often a dependency, but if you don't use it directly, pip might install a compatible version
 pillow==10.4.0
 
-# Other Dependencies (Keep only if truly needed by your app)
-attrs==23.2.0
-blinker==1.7.0
-cachetools==5.3.3
-certifi==2024.7.4
-charset-normalizer==3.3.2
-click==8.1.7
-cloudpickle==3.0.0
-colorama==0.4.6
-contourpy==1.2.1
-cycler==0.12.1
-Cython==3.0.10
-fonttools==4.53.0
-gitdb==4.0.12
-GitPython==3.1.43
-idna==3.7
-Jinja2==3.1.4
-joblib==1.4.2
-jsonschema==4.22.0
-jsonschema-specifications==2023.12.1
-kiwisolver==1.4.5
-llvmlite==0.42.0
-MarkupSafe==2.1.5
-narwhals==1.2.0
-numba
-packaging==24.1
-protobuf==4.25.3
-pyarrow==16.0.0
-python-dateutil==2.9.0.post0
-pytz==2024.1
-referencing==0.35.1
-requests==2.31.0
-rpds-py==0.19.0
-six==1.17.0
-slicer==0.0.8
-smmap==5.0.1
-tenacity==8.3.0
-toml==0.10.2
-tornado==6.4.1
-typing_extensions==4.12.2
-tzdata==2024.1
-urllib3==2.2.1
-watchdog==4.0.1
+# Remove most of the "Other Dependencies" if they are purely transitive.
+# pip/uv will automatically resolve and install necessary sub-dependencies.
+# Keeping only what's typically needed for a Streamlit app with ML.
+# For example, packages like 'attrs', 'blinker', 'cachetools' etc. are usually pulled in
+# by higher-level packages like Streamlit itself or other data libraries.
