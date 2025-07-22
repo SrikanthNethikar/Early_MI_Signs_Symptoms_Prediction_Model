@@ -94,4 +94,4 @@ st.markdown("---")
 st.subheader("🧠 Feature Importance (SHAP Summary)")
 
 with st.expander("📊 See SHAP Feature Importance"):
-    st.image("shap_summary_early_mi.png", caption="Top features impacting MI prediction", use_column_width=True)    
+    st.image("shap_summary_early_MI.png", caption="Top features impacting MI prediction", use_column_width=True)    
