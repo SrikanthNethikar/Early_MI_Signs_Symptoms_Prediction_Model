@@ -1,4 +1,4 @@
- Early Myocardial Infarction (MI) Signs & Symptoms Prediction Model
+Early Myocardial Infarction (MI) Signs & Symptoms Prediction Model
 Detecting early heart attack (MI) risk from symptoms, lab results, and lifestyle indicators
 Trained on curated clinical and behavioral data for 10–30% arterial occlusion cases.
 
@@ -49,3 +49,29 @@ Confusion Matrix	TN: 707, FP: 0, FN: 41, TP: 252
 🧠 Explainability with SHAP
 To enhance trust in healthcare AI, this app includes a SHAP feature importance chart to explain how different features contribute to each prediction.
 
+
+
+💻 Try It Yourself
+Coming Soon: Live App Link
+
+Clone the repo and run locally:
+
+bash
+Copy
+Edit
+git clone https://github.com/SrikanthNethikar/Early_MI_Signs_Symptoms_Prediction_Model.git
+cd Early_MI_Signs_Symptoms_Prediction_Model
+pip install -r requirements.txt
+streamlit run app.py
+👨‍💻 Author
+Srikanth Nethikar
+AI Engineer | Healthcare Specialist | Streamlit Developer
+📧 nethikarsrikanth@gmail.com
+🔗 LinkedIn | GitHub
+
+🩺 Why This Project Matters
+Early intervention in heart attack cases saves lives
+
+Accessible predictions via web interface (no installations needed)
+
+Transparent AI using SHAP makes the model explainable to patients and doctors
