@@ -128,10 +128,10 @@ X_background_for_shap = create_dummy_background_data(feature_names)
 
 # Initialize SHAP Explainer (cached for performance)
 @st.cache_resource
-def get_shap_explainer(model_obj, background_data):
+def get_shap_explainer(_model_obj, background_data): # Changed model_obj to _model_obj
     # Using TreeExplainer for tree-based models (like RandomForest, XGBoost, LightGBM)
     # For other models (e.g., linear models, neural networks), you might need shap.KernelExplainer or shap.DeepExplainer
-    return shap.TreeExplainer(model_obj, background_data)
+    return shap.TreeExplainer(_model_obj, background_data) # Changed model_obj to _model_obj
 
 explainer = get_shap_explainer(model, X_background_for_shap)
 expected_value = explainer.expected_value # This will be used for waterfall/force plots
@@ -283,7 +283,7 @@ with st.expander("📈 See Feature Dependence Plot"):
         elif interaction_feature == 'auto':
             interaction_index_val = "auto"
         else:
-            interaction_index_val = interaction_feature
+            interaction_index_val = feature_names.index(interaction_feature) # Use index for interaction_index_val
 
         fig_dependence, ax_dependence = plt.subplots(figsize=(10, 6))
         shap.dependence_plot(
