@@ -220,8 +220,8 @@ st.warning(
 
 # Compute SHAP values for the background data for global plots
 @st.cache_resource
-def compute_global_shap_values(explainer_obj, background_data):
-    return explainer_obj.shap_values(background_data)
+def compute_global_shap_values(_explainer_obj, background_data): # Changed explainer_obj to _explainer_obj
+    return _explainer_obj.shap_values(background_data) # Changed explainer_obj to _explainer_obj
 
 global_shap_values = compute_global_shap_values(explainer, X_background_for_shap)
 
