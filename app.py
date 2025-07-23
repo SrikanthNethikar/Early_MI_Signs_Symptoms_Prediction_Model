@@ -242,9 +242,9 @@ else:
 
 # Create a SHAP Explanation object for global plots for consistency
 global_explanation_object = shap.Explanation(
-    values=shap_values_for_global_plots,
-    base_values=global_base_value, # Added base_values here
-    data=X_background_for_shap.values, # Pass .values here for the Explanation object
+    values=global_shap_values, # Pass the full global_shap_values here
+    base_values=global_base_value,
+    data=X_background_for_shap.values,
     feature_names=feature_names
 )
 
@@ -304,8 +304,10 @@ with st.expander("📈 See Feature Dependence Plot"):
         fig_dependence, ax_dependence = plt.subplots(figsize=(10, 6))
         shap.dependence_plot(
             feature_to_plot, # Pass feature name string
-            global_explanation_object, # Pass the Explanation object directly
+            global_explanation_object.values, # Pass values from the Explanation object
+            global_explanation_object.data, # Pass data from the Explanation object
             interaction_index=interaction_index_val,
+            feature_names=feature_names, # Ensure feature_names is passed
             show=False
         )
         st.pyplot(fig_dependence)
