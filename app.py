@@ -226,12 +226,18 @@ def compute_global_shap_values(_explainer_obj, background_data): # Changed expla
 global_shap_values = compute_global_shap_values(explainer, X_background_for_shap)
 
 # Determine the SHAP values for the summary/dependence plots (e.g., for class 1 if binary, or first class if multi-class)
+# Handle SHAP values format (list for classification, array for regression)
 if isinstance(global_shap_values, list):
-    # For classification, often interested in the positive class (index 1) or first class (index 0)
-    # Adjust '1' if your positive class is different or if you want class 0.
-    shap_values_for_global_plots = global_shap_values[1] if len(global_shap_values) > 1 else global_shap_values[0]
+    # Use SHAP values for class 1 (e.g., 'positive' class)
+    shap_values_for_global_plots = global_shap_values[1]
 else:
     shap_values_for_global_plots = global_shap_values
+
+# Ensure SHAP values and X_background have same number of samples
+if shap_values_for_global_plots.shape[0] != X_background_for_shap.shape[0]:
+    st.error(f"Shape mismatch: SHAP values ({shap_values_for_global_plots.shape}) "
+             f"vs background data ({X_background_for_shap.shape}).")
+    st.stop()
 
 
 # --- SHAP Summary Plot (Beeswarm) ---
@@ -247,7 +253,17 @@ with st.expander("🐝 See Global Feature Importance (SHAP Beeswarm Plot)"):
         "The x-axis shows the SHAP value (impact on model output)."
     )
 
+st.write("Generating SHAP scatter plot...")
+st.write(f"SHAP values shape: {shap_values_for_global_plots.shape}")
+st.write(f"Background data shape: {X_background_for_shap.shape}")
+
 # --- SHAP Dependence Plot ---
+# Safety check: ensure SHAP values and X have the same number of rows
+if shap_values_for_global_plots.shape[0] != X_background_for_shap.shape[0]:
+    st.error("Mismatch between SHAP values and background data. "
+             "Ensure your SHAP values array aligns with the background dataset.")
+    st.stop()
+
 with st.expander("📈 See Feature Dependence Plot"):
     st.write(
         "Explore how a feature's value affects its SHAP value, and how this relationship "
