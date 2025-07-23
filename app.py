@@ -290,7 +290,7 @@ with st.expander("📈 See Feature Dependence Plot"):
         shap.dependence_plot(
             feature_to_plot,
             shap_values_for_global_plots,
-            X_background_for_shap.values, # Changed to .values to ensure NumPy array for consistency
+            X_background_for_shap, # Changed from .values back to DataFrame
             interaction_index=interaction_index_val,
             feature_names=feature_names,
             show=False
