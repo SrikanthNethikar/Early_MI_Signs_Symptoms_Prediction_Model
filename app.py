@@ -3,7 +3,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import shap
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt # Still needed for other potential plots if added later, but not for static image
 import sklearn # Ensure scikit-learn is available for model compatibility
 import streamlit.components.v1 as components
 
@@ -107,13 +107,10 @@ input_data_array = np.array([[
 input_df_for_shap = pd.DataFrame(input_data_array, columns=feature_names)
 
 # --- Dummy Background Data for SHAP Explainer (IMPORTANT: Replace with your actual training data) ---
-# For global SHAP plots (Summary, Dependence), we need a background dataset.
-# This dummy data is created to match the structure of your input features.
 # For accurate SHAP values, replace this with a representative sample of your model's training data.
 @st.cache_resource # Cache this to avoid re-creating on every rerun
 def create_dummy_background_data(feature_names_list):
     # Create a dummy DataFrame with random values for demonstration
-    # In a real scenario, this would be your actual X_train or a sample of it.
     num_dummy_samples = 500 # Increased number of samples for better variance
     dummy_data = {}
     for feature in feature_names_list:
@@ -121,7 +118,6 @@ def create_dummy_background_data(feature_names_list):
                        'activity_mins', 'oxygen_sat', 'artery_block']:
             dummy_data[feature] = np.random.rand(num_dummy_samples).astype(float) * 100 # Scale for numerical
         else: # Binary/One-hot encoded features
-            # Ensure enough variance for binary features
             dummy_data[feature] = np.random.choice([0.0, 1.0], size=num_dummy_samples, p=[0.5, 0.5]).astype(float)
     return pd.DataFrame(dummy_data, columns=feature_names_list)
 
@@ -139,7 +135,6 @@ expected_value = explainer.expected_value # This will be used for waterfall/forc
 if st.button("🩺 Predict MI Risk"):
     prediction = model.predict(input_data_array)[0]
     # For binary classification, predict_proba returns [prob_class_0, prob_class_1]
-    # We want the probability of the probability of the predicted class.
     prob = model.predict_proba(input_data_array)[0][prediction] * 100
 
     st.subheader("🔍 Prediction Result:")
@@ -154,17 +149,14 @@ if st.button("🩺 Predict MI Risk"):
     st.subheader("🧠 Understanding This Prediction with SHAP")
 
     # Compute SHAP values for the single input instance
-    # shap_values will be a list if it's a multi-class model, or an array for binary/regression
     shap_values_instance = explainer.shap_values(input_df_for_shap)
 
     # Determine the SHAP values and expected value for the predicted class for plotting
     if isinstance(shap_values_instance, list):
-        # Multi-class model: select SHAP values for the predicted class
-        shap_values_for_plot = shap_values_instance[prediction][0] # [0] because input_df_for_shap is a single row
+        shap_values_for_plot = shap_values_instance[prediction][0]
         expected_value_for_plot = expected_value[prediction]
     else:
-        # Binary or Regression model
-        shap_values_for_plot = shap_values_instance[0] # [0] because input_df_for_shap is a single row
+        shap_values_for_plot = shap_values_instance[0]
         expected_value_for_plot = expected_value
 
     # --- SHAP Waterfall Plot for the current prediction ---
@@ -173,7 +165,6 @@ if st.button("🩺 Predict MI Risk"):
             "This plot shows how each feature contributes to the current prediction, "
             "moving from the model's base value to the final predicted value."
         )
-        # Create a SHAP Explanation object for the waterfall plot
         explanation_object = shap.Explanation(
             values=shap_values_for_plot,
             base_values=expected_value_for_plot,
@@ -195,130 +186,33 @@ if st.button("🩺 Predict MI Risk"):
             "Red features push the prediction higher, blue features push it lower."
         )
         shap.initjs() # Initialize JavaScript for interactive plots
-        # Display the interactive force plot
-        # It's important to pass the correct expected_value and shap_values for the specific instance.
         force_plot_html = shap.force_plot(
             expected_value_for_plot,
             shap_values_for_plot,
-            input_df_for_shap, # Pass the DataFrame row for feature values
+            input_df_for_shap,
             feature_names=feature_names,
-            matplotlib=False # This ensures the interactive JavaScript plot
+            matplotlib=False
         )
         components.html(force_plot_html.html, height=300, scrolling=True)
         st.caption(
             "Drag the plot to explore feature contributions. Features in red increase the prediction, blue decrease it."
         )
 
-# --- Global SHAP Plots (Always visible, using background data) ---
+# --- Global SHAP Insights (Static Image) ---
 st.markdown("---")
 st.subheader("📊 Global Model Insights with SHAP")
 st.warning(
-    "**Important:** For accurate global SHAP insights, replace the dummy background data "
-    "with a representative sample of your actual training data."
+    "**Note:** Dynamic SHAP global plots are currently disabled due to persistent errors. "
+    "A static summary plot is displayed below. For accurate insights, use a representative "
+    "sample of your actual training data when generating SHAP plots externally."
 )
 
-# Compute SHAP values for the background data for global plots
-@st.cache_resource
-def compute_global_shap_values(_explainer_obj, background_data):
-    return _explainer_obj.shap_values(background_data)
-
-global_shap_values = compute_global_shap_values(explainer, X_background_for_shap)
-
-# Determine the SHAP values for the summary/dependence plots (e.g., for class 1 if binary, or first class if multi-class)
-if isinstance(global_shap_values, list):
-    # For classification, often interested in the positive class (index 1) or first class (index 0)
-    # Adjust '1' if your positive class is different or if you want class 0.
-    shap_values_for_global_plots = global_shap_values[1] if len(global_shap_values) > 1 else global_shap_values[0]
-else:
-    shap_values_for_global_plots = global_shap_values
-
-# Determine the base value for global plots based on the selected SHAP values
-if isinstance(expected_value, list):
-    # If expected_value is a list (multi-class), pick the one corresponding to the selected global_shap_values
-    # Assuming shap_values_for_global_plots corresponds to expected_value[1] or expected_value[0]
-    global_base_value = expected_value[1] if len(expected_value) > 1 else expected_value[0]
-else:
-    global_base_value = expected_value
-
-# Create a SHAP Explanation object for global plots for consistency
-# This Explanation object will be used for both summary and dependence plots
-global_explanation_object = shap.Explanation(
-    values=global_shap_values, # Use the full global_shap_values (could be list or array)
-    base_values=global_base_value,
-    data=X_background_for_shap, # Pass the DataFrame directly here
-    feature_names=feature_names
-)
-
-# --- SHAP Summary Plot (Beeswarm) ---
-with st.expander("🐝 See Global Feature Importance (SHAP Beeswarm Plot)"):
-    st.write(
-        "This plot shows the overall impact and direction of each feature on the model's output across the background dataset."
-    )
-    fig_summary, ax_summary = plt.subplots(figsize=(12, 8))
-    # Pass the Explanation object directly
-    shap.summary_plot(global_explanation_object, show=False)
-    st.pyplot(fig_summary)
-    st.caption(
-        "Each dot represents an instance. Red dots indicate higher feature values, blue dots lower. "
-        "The x-axis shows the SHAP value (impact on model output)."
-    )
-
-# --- SHAP Dependence Plot ---
-with st.expander("📈 See Feature Dependence Plot"):
-    st.write(
-        "Explore how a feature's value affects its SHAP value, and how this relationship "
-        "is influenced by another interacting feature across the background dataset."
-    )
-
-    # Allow user to select the primary feature for the dependence plot
-    # Filter out features that might not be suitable for x-axis (e.g., all 0s or 1s in dummy data)
-    valid_features_for_x = [f for f in feature_names if X_background_for_shap[f].nunique() > 1]
-
-    if not valid_features_for_x:
-        st.warning("Not enough variance in dummy background data to create dependence plots. "
-                   "Please replace with actual training data.")
-    else:
-        feature_to_plot = st.selectbox(
-            "Select primary feature for dependence plot:",
-            options=valid_features_for_x,
-            index=0, # Default to the first valid feature
-            key="dep_feature_select"
-        )
-
-        # Allow user to select an interaction feature (optional)
-        interaction_feature = st.selectbox(
-            "Select interaction feature (optional, 'auto' for best interaction):",
-            options=['None', 'auto'] + valid_features_for_x,
-            index=0, # Default to None
-            key="inter_feature_select"
-        )
-
-        # Determine the actual interaction_index for shap.dependence_plot
-        if interaction_feature == 'None':
-            interaction_index_val = None
-        elif interaction_feature == 'auto':
-            interaction_index_val = "auto"
-        else:
-            # Pass the feature name string directly, shap.dependence_plot accepts it
-            interaction_index_val = interaction_feature
-
-        fig_dependence, ax_dependence = plt.subplots(figsize=(10, 6))
-        # Corrected call to shap.dependence_plot:
-        # Pass the primary feature, the SHAP values (from global_explanation_object.values),
-        # and the original feature data (X_background_for_shap DataFrame).
-        shap.dependence_plot(
-            feature_to_plot,
-            global_explanation_object.values, # Use the SHAP values array
-            X_background_for_shap, # Use the original DataFrame for features
-            interaction_index=interaction_index_val,
-            feature_names=feature_names,
-            show=False
-        )
-        st.pyplot(fig_dependence)
-        st.caption(
-            f"This plot shows the relationship between '{feature_to_plot}' and its SHAP value. "
-            f"The color indicates the value of the {'interacting feature (' + interaction_feature + ')' if interaction_feature != 'None' else 'primary feature itself'}."
-        )
+# Display the static SHAP summary image
+try:
+    st.image("shap_summary_early_MI.png", caption="Global SHAP Summary Plot (Static Image)", use_column_width=True)
+except FileNotFoundError:
+    st.error("Error: 'shap_summary_early_MI.png' not found. Please ensure the image file is in the same directory.")
+    st.info("You can generate this plot using `shap.summary_plot` with your training data and save it as 'shap_summary_early_MI.png'.")
 
 st.markdown("---")
 st.write("This app uses `shap` library for model interpretability.")
