@@ -304,12 +304,14 @@ with st.expander("📈 See Feature Dependence Plot"):
 
         fig_dependence, ax_dependence = plt.subplots(figsize=(10, 6))
         # Corrected call to shap.dependence_plot:
-        # Pass the primary feature, and the Explanation object directly.
-        # shap.dependence_plot can handle the Explanation object for both values and data.
+        # Pass the primary feature, the SHAP values (from global_explanation_object.values),
+        # and the original feature data (X_background_for_shap DataFrame).
         shap.dependence_plot(
             feature_to_plot,
-            global_explanation_object, # Pass the Explanation object directly
+            global_explanation_object.values, # Use the SHAP values array
+            X_background_for_shap, # Use the original DataFrame for features
             interaction_index=interaction_index_val,
+            feature_names=feature_names,
             show=False
         )
         st.pyplot(fig_dependence)
