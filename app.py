@@ -153,13 +153,17 @@ if st.button("🩺 Predict MI Risk"):
 
     # Determine the SHAP values and expected value for the predicted class for plotting
     if isinstance(shap_values_instance, list):
-        # Multi-class model: select SHAP values for the predicted class and flatten to 1D
-        shap_values_for_plot = np.array(shap_values_instance[prediction]).flatten()
-        expected_value_for_plot = expected_value[prediction]
+        # Multi-class model: select SHAP values for the predicted class and ensure it's 1D
+        # Access the first (and only) sample's SHAP values for the predicted class
+        shap_values_for_plot = shap_values_instance[prediction][0]
+        # Ensure expected_value_for_plot is a scalar float
+        expected_value_for_plot = float(expected_value[prediction])
     else:
-        # Binary or Regression model: flatten to 1D
-        shap_values_for_plot = np.array(shap_values_instance).flatten()
-        expected_value_for_plot = expected_value
+        # Binary or Regression model: ensure it's 1D
+        # Access the first (and only) sample's SHAP values
+        shap_values_for_plot = shap_values_instance[0]
+        # Ensure expected_value_for_plot is a scalar float
+        expected_value_for_plot = float(expected_value)
 
     # --- SHAP Waterfall Plot for the current prediction ---
     with st.expander("🌊 See Waterfall Plot for This Prediction"):
