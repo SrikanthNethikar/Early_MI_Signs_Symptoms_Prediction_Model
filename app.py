@@ -243,7 +243,7 @@ else:
 # Create a SHAP Explanation object for global plots for consistency
 # This Explanation object will be used for both summary and dependence plots
 global_explanation_object = shap.Explanation(
-    values=shap_values_for_global_plots, # Use the selected 2D array for the values
+    values=global_shap_values, # Use the full global_shap_values (could be list or array)
     base_values=global_base_value,
     data=X_background_for_shap, # Pass the DataFrame directly here
     feature_names=feature_names
