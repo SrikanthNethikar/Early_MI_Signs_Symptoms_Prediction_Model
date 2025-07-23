@@ -2,10 +2,11 @@ import streamlit as st
 import joblib
 import numpy as np
 import pandas as pd
-import shap
-import matplotlib.pyplot as plt # Still needed for other potential plots if added later, but not for static image
+# Removed shap and matplotlib imports as dynamic plots are no longer used
+# import shap
+# import matplotlib.pyplot as plt
 import sklearn # Ensure scikit-learn is available for model compatibility
-import streamlit.components.v1 as components
+# import streamlit.components.v1 as components # No longer needed for force plot
 
 # --- Configuration and Model Loading ---
 st.set_page_config(page_title="Early MI Signs Prediction", layout="centered")
@@ -103,33 +104,8 @@ input_data_array = np.array([[
     meno_post, meno_pre
 ]])
 
-# Convert input data to DataFrame for SHAP
+# Convert input data to DataFrame for SHAP - still useful for general data handling
 input_df_for_shap = pd.DataFrame(input_data_array, columns=feature_names)
-
-# --- Dummy Background Data for SHAP Explainer (IMPORTANT: Replace with your actual training data) ---
-# For accurate SHAP values, replace this with a representative sample of your model's training data.
-@st.cache_resource # Cache this to avoid re-creating on every rerun
-def create_dummy_background_data(feature_names_list):
-    # Create a dummy DataFrame with random values for demonstration
-    num_dummy_samples = 500 # Increased number of samples for better variance
-    dummy_data = {}
-    for feature in feature_names_list:
-        if feature in ['age', 'resting_bp', 'chol_total', 'ldl', 'hdl', 'trig', 'bmi', 'fbs', 'hr_rest', 'troponin',
-                       'activity_mins', 'oxygen_sat', 'artery_block']:
-            dummy_data[feature] = np.random.rand(num_dummy_samples).astype(float) * 100 # Scale for numerical
-        else: # Binary/One-hot encoded features
-            dummy_data[feature] = np.random.choice([0.0, 1.0], size=num_dummy_samples, p=[0.5, 0.5]).astype(float)
-    return pd.DataFrame(dummy_data, columns=feature_names_list)
-
-X_background_for_shap = create_dummy_background_data(feature_names)
-
-# Initialize SHAP Explainer (cached for performance)
-@st.cache_resource
-def get_shap_explainer(_model_obj, background_data):
-    return shap.TreeExplainer(_model_obj, background_data)
-
-explainer = get_shap_explainer(model, X_background_for_shap)
-expected_value = explainer.expected_value # This will be used for waterfall/force plots
 
 # --- Prediction Logic ---
 if st.button("🩺 Predict MI Risk"):
@@ -144,67 +120,12 @@ if st.button("🩺 Predict MI Risk"):
         st.success("Low Risk of MI ❤️")
     st.info(f"Prediction Confidence: {prob:.2f}%")
 
-    # --- SHAP Section for Individual Prediction (Waterfall & Force) ---
-    st.markdown("---")
-    st.subheader("🧠 Understanding This Prediction with SHAP")
+    # Removed individual SHAP plots as requested
+    # st.markdown("---")
+    # st.subheader("🧠 Understanding This Prediction with SHAP")
+    # ... (removed waterfall and force plot code) ...
 
-    # Compute SHAP values for the single input instance
-    shap_values_instance = explainer.shap_values(input_df_for_shap)
-
-    # Determine the SHAP values and expected value for the predicted class for plotting
-    if isinstance(shap_values_instance, list):
-        # Multi-class model: select SHAP values for the predicted class and ensure it's 1D
-        # Access the first (and only) sample's SHAP values for the predicted class
-        shap_values_for_plot = shap_values_instance[prediction][0]
-        # Ensure expected_value_for_plot is a scalar float
-        expected_value_for_plot = float(expected_value[prediction].item()) if isinstance(expected_value[prediction], np.ndarray) else float(expected_value[prediction])
-    else:
-        # Binary or Regression model: ensure it's 1D
-        # Access the first (and only) sample's SHAP values
-        shap_values_for_plot = shap_values_instance[0]
-        # Ensure expected_value_for_plot is a scalar float
-        expected_value_for_plot = float(expected_value.item()) if isinstance(expected_value, np.ndarray) else float(expected_value)
-
-    # --- SHAP Waterfall Plot for the current prediction ---
-    with st.expander("🌊 See Waterfall Plot for This Prediction"):
-        st.write(
-            "This plot shows how each feature contributes to the current prediction, "
-            "moving from the model's base value to the final predicted value."
-        )
-        explanation_object = shap.Explanation(
-            values=shap_values_for_plot,
-            base_values=expected_value_for_plot,
-            data=input_df_for_shap.values[0],
-            feature_names=feature_names
-        )
-        fig_waterfall, ax_waterfall = plt.subplots(figsize=(10, 6))
-        shap.plots.waterfall(explanation_object, show=False)
-        st.pyplot(fig_waterfall)
-        st.caption(
-            "Red bars increase the prediction, blue bars decrease it. "
-            "The gray text shows the feature's value for this instance."
-        )
-
-    # --- SHAP Force Plot for the current prediction ---
-    with st.expander("💪 See Interactive Force Plot for This Prediction"):
-        st.write(
-            "This interactive plot provides another view of feature contributions for the current prediction. "
-            "Red features push the prediction higher, blue features push it lower."
-        )
-        shap.initjs() # Initialize JavaScript for interactive plots
-        force_plot_html = shap.force_plot(
-            expected_value_for_plot,
-            shap_values_for_plot,
-            input_df_for_shap,
-            feature_names=feature_names,
-            matplotlib=False
-        )
-        components.html(force_plot_html.html, height=300, scrolling=True)
-        st.caption(
-            "Drag the plot to explore feature contributions. Features in red increase the prediction, blue decrease it."
-        )
-
-# --- Global SHAP Insights (Static Image) ---
+# --- Global SHAP Insights (Static Image Only) ---
 st.markdown("---")
 st.subheader("📊 Global Model Insights with SHAP")
 
