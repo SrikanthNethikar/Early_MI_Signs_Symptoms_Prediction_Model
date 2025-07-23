@@ -119,9 +119,9 @@ def create_dummy_background_data(feature_names_list):
     for feature in feature_names_list:
         if feature in ['age', 'resting_bp', 'chol_total', 'ldl', 'hdl', 'trig', 'bmi', 'fbs', 'hr_rest', 'troponin',
                        'activity_mins', 'oxygen_sat', 'artery_block']:
-            dummy_data[feature] = np.random.rand(num_dummy_samples) * 100 # Scale for numerical
+            dummy_data[feature] = np.random.rand(num_dummy_samples).astype(float) * 100 # Scale for numerical
         else: # Binary/One-hot encoded features
-            dummy_data[feature] = np.random.randint(0, 2, num_dummy_samples)
+            dummy_data[feature] = np.random.randint(0, 2, num_dummy_samples).astype(float) # Ensure float type
     return pd.DataFrame(dummy_data, columns=feature_names_list)
 
 X_background_for_shap = create_dummy_background_data(feature_names)
@@ -288,9 +288,9 @@ with st.expander("📈 See Feature Dependence Plot"):
 
         fig_dependence, ax_dependence = plt.subplots(figsize=(10, 6))
         shap.dependence_plot(
-            feature_to_plot,
+            feature_to_plot, # Pass feature name string
             shap_values_for_global_plots,
-            X_background_for_shap, # Changed from .values back to DataFrame
+            X_background_for_shap, # Pass DataFrame directly
             interaction_index=interaction_index_val,
             feature_names=feature_names,
             show=False
