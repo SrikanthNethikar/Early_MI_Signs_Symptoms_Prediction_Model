@@ -139,7 +139,7 @@ expected_value = explainer.expected_value # This will be used for waterfall/forc
 if st.button("🩺 Predict MI Risk"):
     prediction = model.predict(input_data_array)[0]
     # For binary classification, predict_proba returns [prob_class_0, prob_class_1]
-    # We want the probability of the predicted class.
+    # We want the probability of the probability of the predicted class.
     prob = model.predict_proba(input_data_array)[0][prediction] * 100
 
     st.subheader("🔍 Prediction Result:")
@@ -232,9 +232,18 @@ if isinstance(global_shap_values, list):
 else:
     shap_values_for_global_plots = global_shap_values
 
+# Determine the base value for global plots based on the selected SHAP values
+if isinstance(expected_value, list):
+    # If expected_value is a list (multi-class), pick the one corresponding to the selected global_shap_values
+    # Assuming shap_values_for_global_plots corresponds to expected_value[1] or expected_value[0]
+    global_base_value = expected_value[1] if len(expected_value) > 1 else expected_value[0]
+else:
+    global_base_value = expected_value
+
 # Create a SHAP Explanation object for global plots for consistency
 global_explanation_object = shap.Explanation(
     values=shap_values_for_global_plots,
+    base_values=global_base_value, # Added base_values here
     data=X_background_for_shap.values, # Pass .values here for the Explanation object
     feature_names=feature_names
 )
