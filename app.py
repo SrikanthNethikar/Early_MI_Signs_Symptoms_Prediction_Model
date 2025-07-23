@@ -201,11 +201,6 @@ if st.button("🩺 Predict MI Risk"):
 # --- Global SHAP Insights (Static Image) ---
 st.markdown("---")
 st.subheader("📊 Global Model Insights with SHAP")
-st.warning(
-    "**Note:** Dynamic SHAP global plots are currently disabled due to persistent errors. "
-    "A static summary plot is displayed below. For accurate insights, use a representative "
-    "sample of your actual training data when generating SHAP plots externally."
-)
 
 # Display the static SHAP summary image
 try:
