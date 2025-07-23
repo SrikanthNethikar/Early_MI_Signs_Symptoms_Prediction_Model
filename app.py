@@ -283,13 +283,14 @@ with st.expander("📈 See Feature Dependence Plot"):
         elif interaction_feature == 'auto':
             interaction_index_val = "auto"
         else:
-            interaction_index_val = feature_names.index(interaction_feature) # Use index for interaction_index_val
+            # Pass the feature name string directly, shap.dependence_plot accepts it
+            interaction_index_val = interaction_feature
 
         fig_dependence, ax_dependence = plt.subplots(figsize=(10, 6))
         shap.dependence_plot(
             feature_to_plot,
             shap_values_for_global_plots,
-            X_background_for_shap,
+            X_background_for_shap.values, # Changed to .values to ensure NumPy array for consistency
             interaction_index=interaction_index_val,
             feature_names=feature_names,
             show=False
