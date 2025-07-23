@@ -114,24 +114,23 @@ input_df_for_shap = pd.DataFrame(input_data_array, columns=feature_names)
 def create_dummy_background_data(feature_names_list):
     # Create a dummy DataFrame with random values for demonstration
     # In a real scenario, this would be your actual X_train or a sample of it.
-    num_dummy_samples = 100
+    num_dummy_samples = 500 # Increased number of samples for better variance
     dummy_data = {}
     for feature in feature_names_list:
         if feature in ['age', 'resting_bp', 'chol_total', 'ldl', 'hdl', 'trig', 'bmi', 'fbs', 'hr_rest', 'troponin',
                        'activity_mins', 'oxygen_sat', 'artery_block']:
             dummy_data[feature] = np.random.rand(num_dummy_samples).astype(float) * 100 # Scale for numerical
         else: # Binary/One-hot encoded features
-            dummy_data[feature] = np.random.randint(0, 2, num_dummy_samples).astype(float) # Ensure float type
+            # Ensure enough variance for binary features
+            dummy_data[feature] = np.random.choice([0.0, 1.0], size=num_dummy_samples, p=[0.5, 0.5]).astype(float)
     return pd.DataFrame(dummy_data, columns=feature_names_list)
 
 X_background_for_shap = create_dummy_background_data(feature_names)
 
 # Initialize SHAP Explainer (cached for performance)
 @st.cache_resource
-def get_shap_explainer(_model_obj, background_data): # Changed model_obj to _model_obj
-    # Using TreeExplainer for tree-based models (like RandomForest, XGBoost, LightGBM)
-    # For other models (e.g., linear models, neural networks), you might need shap.KernelExplainer or shap.DeepExplainer
-    return shap.TreeExplainer(_model_obj, background_data) # Changed model_obj to _model_obj
+def get_shap_explainer(_model_obj, background_data):
+    return shap.TreeExplainer(_model_obj, background_data)
 
 explainer = get_shap_explainer(model, X_background_for_shap)
 expected_value = explainer.expected_value # This will be used for waterfall/force plots
@@ -220,25 +219,25 @@ st.warning(
 
 # Compute SHAP values for the background data for global plots
 @st.cache_resource
-def compute_global_shap_values(_explainer_obj, background_data): # Changed explainer_obj to _explainer_obj
-    return _explainer_obj.shap_values(background_data) # Changed explainer_obj to _explainer_obj
+def compute_global_shap_values(_explainer_obj, background_data):
+    return _explainer_obj.shap_values(background_data)
 
 global_shap_values = compute_global_shap_values(explainer, X_background_for_shap)
 
 # Determine the SHAP values for the summary/dependence plots (e.g., for class 1 if binary, or first class if multi-class)
-# Handle SHAP values format (list for classification, array for regression)
 if isinstance(global_shap_values, list):
-    # Use SHAP values for class 1 (e.g., 'positive' class)
-    shap_values_for_global_plots = global_shap_values[1]
+    # For classification, often interested in the positive class (index 1) or first class (index 0)
+    # Adjust '1' if your positive class is different or if you want class 0.
+    shap_values_for_global_plots = global_shap_values[1] if len(global_shap_values) > 1 else global_shap_values[0]
 else:
     shap_values_for_global_plots = global_shap_values
 
-# Ensure SHAP values and X_background have same number of samples
-if shap_values_for_global_plots.shape[0] != X_background_for_shap.shape[0]:
-    st.error(f"Shape mismatch: SHAP values ({shap_values_for_global_plots.shape}) "
-             f"vs background data ({X_background_for_shap.shape}).")
-    st.stop()
-
+# Create a SHAP Explanation object for global plots for consistency
+global_explanation_object = shap.Explanation(
+    values=shap_values_for_global_plots,
+    data=X_background_for_shap.values, # Pass .values here for the Explanation object
+    feature_names=feature_names
+)
 
 # --- SHAP Summary Plot (Beeswarm) ---
 with st.expander("🐝 See Global Feature Importance (SHAP Beeswarm Plot)"):
@@ -246,24 +245,15 @@ with st.expander("🐝 See Global Feature Importance (SHAP Beeswarm Plot)"):
         "This plot shows the overall impact and direction of each feature on the model's output across the background dataset."
     )
     fig_summary, ax_summary = plt.subplots(figsize=(12, 8))
-    shap.summary_plot(shap_values_for_global_plots, X_background_for_shap, feature_names=feature_names, show=False)
+    # Pass the Explanation object directly
+    shap.summary_plot(global_explanation_object, show=False)
     st.pyplot(fig_summary)
     st.caption(
         "Each dot represents an instance. Red dots indicate higher feature values, blue dots lower. "
         "The x-axis shows the SHAP value (impact on model output)."
     )
 
-st.write("Generating SHAP scatter plot...")
-st.write(f"SHAP values shape: {shap_values_for_global_plots.shape}")
-st.write(f"Background data shape: {X_background_for_shap.shape}")
-
 # --- SHAP Dependence Plot ---
-# Safety check: ensure SHAP values and X have the same number of rows
-if shap_values_for_global_plots.shape[0] != X_background_for_shap.shape[0]:
-    st.error("Mismatch between SHAP values and background data. "
-             "Ensure your SHAP values array aligns with the background dataset.")
-    st.stop()
-
 with st.expander("📈 See Feature Dependence Plot"):
     st.write(
         "Explore how a feature's value affects its SHAP value, and how this relationship "
@@ -305,10 +295,8 @@ with st.expander("📈 See Feature Dependence Plot"):
         fig_dependence, ax_dependence = plt.subplots(figsize=(10, 6))
         shap.dependence_plot(
             feature_to_plot, # Pass feature name string
-            shap_values_for_global_plots,
-            X_background_for_shap, # Pass DataFrame directly
+            global_explanation_object, # Pass the Explanation object directly
             interaction_index=interaction_index_val,
-            feature_names=feature_names,
             show=False
         )
         st.pyplot(fig_dependence)
